@@ -6,8 +6,8 @@
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow),
-  mPlot(0),
-  mPlotWidget(0),
+  //mPlot(0),
+  //mPlotWidget(0),
   Rfixed(2.0),
   Rmoving(1.0),
   Rpoint(1.0),
@@ -17,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent) :
   phi(0.1),
   speedTm(40),
   startPointX(-53287652.0),
-  startPointY(-0.987432)
+  startPointY(-0.987432),
+  tsRange(100)
   //mTag1(0)
   //mTag2(0)
 {
@@ -25,12 +26,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
   mPlotWidget = new QWidget(this);
 
-  this->setMinimumSize(800,620);
+  this->setMinimumSize(800,820);
 
   mPlot = new QCustomPlot(mPlotWidget);
   mPlot->setMinimumSize(600,600);
   mPlot->setMaximumSize(600,600);
   mPlot->setInteractions(QCP::iRangeZoom);
+
+  mPlot2 = new QCustomPlot(mPlotWidget);
+  mPlot2->setMinimumSize(600,200);
+  mPlot2->setMaximumSize(600,200);
 
   mStartButton = new QPushButton(tr("Start"));
   connect(mStartButton, &QPushButton::clicked, this, &MainWindow::startPlot);
@@ -49,18 +54,21 @@ MainWindow::MainWindow(QWidget *parent) :
   QLabel *labelIteration = new QLabel("iter.");
   QLabel *labelSpeed = new QLabel("speed");
   QLabel *labelVariant = new QLabel("type");
+  QLabel *labelRange = new QLabel("tsrange");
 
   mLineEditR1 = new QLineEdit("2");
   mLineEditR2 = new QLineEdit("1");
   mLineEditR3 = new QLineEdit("1");
   mLineEditIter = new QLineEdit("500");
   mLineEditSpeed = new QLineEdit("40");
+  mLineEditPlot2XAxisRange = new QLineEdit("100");
 
   connect(mLineEditR1, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditR2, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditR3, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditIter, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditSpeed, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
+  connect(mLineEditPlot2XAxisRange, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
 
   mComboVariant = new QComboBox;
 
@@ -84,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
   greedLayout->addWidget(labelIteration,3,0,Qt::AlignRight);
   greedLayout->addWidget(labelSpeed,4,0,Qt::AlignRight);
   greedLayout->addWidget(labelVariant,5,0,Qt::AlignRight);
+  greedLayout->addWidget(labelRange,6,0,Qt::AlignRight);
 
   greedLayout->addWidget(mLineEditR1,0,1,Qt::AlignRight);
   greedLayout->addWidget(mLineEditR2,1,1,Qt::AlignRight);
@@ -91,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
   greedLayout->addWidget(mLineEditIter,3,1,Qt::AlignRight);
   greedLayout->addWidget(mLineEditSpeed,4,1,Qt::AlignRight);
   greedLayout->addWidget(mComboVariant,5,1,Qt::AlignRight);
+  greedLayout->addWidget(mLineEditPlot2XAxisRange,6,1,Qt::AlignRight);
 
   QVBoxLayout *controlLayout = new QVBoxLayout;
   controlLayout->addLayout(greedLayout);
@@ -98,8 +108,13 @@ MainWindow::MainWindow(QWidget *parent) :
   controlLayout->addWidget(mClearButton);
   controlLayout->addLayout(buttonLayout);
 
+  QVBoxLayout *graphLayout = new QVBoxLayout;
+  graphLayout->addWidget(mPlot);
+  graphLayout->addWidget(mPlot2);
+
   QHBoxLayout *mainLayout = new QHBoxLayout;
-  mainLayout->addWidget(mPlot);
+  mainLayout->addLayout(graphLayout);
+
   mainLayout->addLayout(controlLayout);
 
   mPlotWidget->setLayout(mainLayout);
@@ -129,23 +144,23 @@ MainWindow::MainWindow(QWidget *parent) :
   fermatSpiral->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
   // configure plot to have two right axes:
-  //mPlot->yAxis->setTickLabels(false);
+  mPlot2->yAxis->setTickLabels(false);
   //connect(mPlot->yAxis2, SIGNAL(rangeChanged(QCPRange)), mPlot->yAxis, SLOT(setRange(QCPRange))); // left axis only mirrors inner right axis
-  //mPlot->yAxis2->setVisible(true);
-  //mPlot->axisRect()->addAxis(QCPAxis::atRight);
-  //mPlot->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(30); // add some padding to have space for tags
-  //mPlot->axisRect()->axis(QCPAxis::atRight, 1)->setPadding(30); // add some padding to have space for tags
+  mPlot2->yAxis2->setVisible(true);
+  mPlot2->axisRect()->addAxis(QCPAxis::atRight);
+  mPlot2->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(30); // add some padding to have space for tags
+  mPlot2->axisRect()->axis(QCPAxis::atRight, 1)->setPadding(30); // add some padding to have space for tags
 
   // // create graphs:
-  //mGraph1 = mPlot->addGraph(mPlot->xAxis, mPlot->axisRect()->axis(QCPAxis::atRight, 0));
+  mGraph1 = mPlot2->addGraph(mPlot2->xAxis, mPlot2->axisRect()->axis(QCPAxis::atRight, 0));
   //mGraph2 = mPlot->addGraph(mPlot->xAxis, mPlot->axisRect()->axis(QCPAxis::atRight, 1));
-  //mGraph1->setPen(QPen(QColor(250, 120, 0)));
-  //mGraph1->setBrush(QBrush(QColor(0, 0, 255, 20)));
+  mGraph1->setPen(QPen(QColor(250, 120, 0)));
+  mGraph1->setBrush(QBrush(QColor(0, 0, 255, 20)));
   //mGraph2->setPen(QPen(QColor(0, 180, 60)));
 
   // // create tags with newly introduced AxisTag class (see axistag.h/.cpp):
-  //mTag1 = new AxisTag(mGraph1->valueAxis());
-  //mTag1->setPen(mGraph1->pen());
+  mTag1 = new AxisTag(mGraph1->valueAxis());
+  mTag1->setPen(mGraph1->pen());
   //mTag2 = new AxisTag(mGraph2->valueAxis());
   //mTag2->setPen(mGraph2->pen());
 
@@ -189,7 +204,9 @@ void MainWindow::stopPlot()
 void MainWindow::clearPlot()
 {
     fermatSpiral->data().data()->clear();
+    mGraph1->data().data()->clear();
     mPlot->replot();
+    mPlot2->replot();
 }
 
 //====================================
@@ -204,6 +221,8 @@ void MainWindow::getValues()
         double r2 = mLineEditR2->text().toDouble();
         double r3 = mLineEditR3->text().toDouble();
         int itr = mLineEditIter->text().toInt();
+        int rangets = mLineEditPlot2XAxisRange->text().toInt();
+
         if(r1>0.0)
             Rfixed = r1;
         if(r2>0.0)
@@ -222,6 +241,9 @@ void MainWindow::getValues()
         }
         if(r3>axisRange)
           axisRange=r3;
+
+        if(rangets>10 && rangets< 5000)
+            tsRange = rangets;
 
         flag_mutex = false;
     }
@@ -270,7 +292,7 @@ void MainWindow::timerSlot()
         RmovingCenterY = Rfixed*(1 - m) * qSin(m * TpolarAngle);
         X = RmovingCenterX + Rpoint * qCos(TpolarAngle * (1 - m));
         Y = RmovingCenterY - Rpoint * qSin(TpolarAngle * (1 - m));
-        axisRange = Rfixed;
+        //axisRange = Rfixed;
 
         break;
     case 1:
@@ -278,7 +300,7 @@ void MainWindow::timerSlot()
         RmovingCenterY = Rfixed*(1 + m) * qSin(m * TpolarAngle);
         X = RmovingCenterX - Rpoint * qCos(TpolarAngle * (1 + m));
         Y = RmovingCenterY - Rpoint * qSin(TpolarAngle * (1 + m));
-        axisRange = Rfixed+Rpoint;
+        //axisRange = Rfixed+Rpoint;
         break;
     default:
         break;
@@ -317,20 +339,31 @@ void MainWindow::timerSlot()
     // make key axis range scroll with the data:
     mPlot->xAxis->rescale();
     fermatSpiral->rescaleValueAxis(true, true);
-    //mGraph1->rescaleValueAxis(false, true);
+    mGraph1->rescaleValueAxis(false, true);
     //mGraph2->rescaleValueAxis(false, true);
     mPlot->xAxis->setRange(0, 4*axisRange, Qt::AlignCenter);
     mPlot->yAxis->setRange(0, 4*axisRange, Qt::AlignBottom);
 
+    // calculate and add a new data point to each graph:
+    mGraph1->addData(mGraph1->dataCount(), Y);
+    //mGraph2->addData(mGraph2->dataCount(), Y);
+
+    // make key axis range scroll with the data:
+    mPlot2->xAxis->rescale();
+    mGraph1->rescaleValueAxis(false, true);
+    //mGraph2->rescaleValueAxis(false, true);
+    mPlot2->xAxis->setRange(mPlot2->xAxis->range().upper, tsRange, Qt::AlignRight);
+
     // update the vertical axis tag positions and texts to match the rightmost data point of the graphs:
-    // double graph1Value = mGraph1->dataMainValue(mGraph1->dataCount()-1);
+    double graph1Value = mGraph1->dataMainValue(mGraph1->dataCount()-1);
     // double graph2Value = mGraph2->dataMainValue(mGraph2->dataCount()-1);
-    // mTag1->updatePosition(graph1Value);
+    mTag1->updatePosition(graph1Value);
     // mTag2->updatePosition(graph2Value);
-    // mTag1->setText(QString::number(graph1Value, 'f', 2));
+    mTag1->setText(QString::number(graph1Value, 'f', 2));
     // mTag2->setText(QString::number(graph2Value, 'f', 2));
 
     mPlot->replot();
+    mPlot2->replot();
     if(i> numIteration){
         stopPlot();
     }
