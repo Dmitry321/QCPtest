@@ -300,7 +300,7 @@ void MainWindow::timerSlot()
         RmovingCenterY = Rfixed*(1 + m) * qSin(m * TpolarAngle);
         X = RmovingCenterX - Rpoint * qCos(TpolarAngle * (1 + m));
         Y = RmovingCenterY - Rpoint * qSin(TpolarAngle * (1 + m));
-        //axisRange = Rfixed+Rpoint;
+        axisRange = Rfixed+Rpoint;
         break;
     default:
         break;

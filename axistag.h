@@ -43,9 +43,9 @@ public:
 public slots:
     void moveTracerCenter(const double &x, const double &y);
 private:
-    QCPItemTracer *mCenterTracer;
     double xRadius;
     double yRadius;
+    QCPItemTracer *mCenterTracer;
 };
 
 #endif // AXISTAG_H

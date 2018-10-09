@@ -11,7 +11,7 @@ AxisTag::AxisTag(QCPAxis *parentAxis) :
   mDummyTracer->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
   mDummyTracer->position->setTypeY(QCPItemPosition::ptPlotCoords);
   mDummyTracer->position->setAxisRect(mAxis->axisRect());
-  mDummyTracer->position->setAxes(0, mAxis);
+  mDummyTracer->position->setAxes(nullptr, mAxis);
   mDummyTracer->position->setCoords(1, 0);
 
   // the arrow end (head) is set to move along with the dummy tracer by setting it as its parent
