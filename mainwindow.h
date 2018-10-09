@@ -15,7 +15,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = 0);
+  explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
 private slots:
@@ -33,6 +33,7 @@ private slots:
 private:
   Ui::MainWindow *ui;
   QCustomPlot *mPlot;
+  QCustomPlot *mPlot2;
   //QCPItemEllipse *mEllipse;
   MyEllipse *mEllipse;
   MyEllipse *mEllipse2;
@@ -56,6 +57,8 @@ private:
   QLineEdit *mLineEditR3;
   QLineEdit *mLineEditIter;
   QLineEdit *mLineEditSpeed;
+  QLineEdit *mLineEditPlot2XAxisRange;
+
 
   QPushButton *mStartButton;
   QPushButton *mStopButton;
@@ -74,6 +77,7 @@ private:
   int speedTm;
   double startPointX;
   double startPointY;
+  int tsRange;
 
 };
 
