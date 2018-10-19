@@ -58,6 +58,9 @@ private:
   QLineEdit *mLineEditIter;
   QLineEdit *mLineEditSpeed;
   QLineEdit *mLineEditPlot2XAxisRange;
+  QLineEdit *mLineEditEpsilon;
+
+  QLabel *mLaberCrIter;
 
 
   QPushButton *mStartButton;
@@ -78,6 +81,7 @@ private:
   double startPointX;
   double startPointY;
   int tsRange;
+  double epsilon;
 
 };
 

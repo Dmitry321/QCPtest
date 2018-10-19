@@ -18,7 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
   speedTm(40),
   startPointX(-53287652.0),
   startPointY(-0.987432),
-  tsRange(100)
+  tsRange(100),
+  epsilon(0.001)
   //mTag1(0)
   //mTag2(0)
 {
@@ -31,11 +32,16 @@ MainWindow::MainWindow(QWidget *parent) :
   mPlot = new QCustomPlot(mPlotWidget);
   mPlot->setMinimumSize(600,600);
   mPlot->setMaximumSize(600,600);
-  mPlot->setInteractions(QCP::iRangeZoom);
+  mPlot->setInteraction(QCP::iRangeZoom, false);
+  mPlot->setInteraction(QCP::iRangeDrag, true);
 
   mPlot2 = new QCustomPlot(mPlotWidget);
   mPlot2->setMinimumSize(600,200);
   mPlot2->setMaximumSize(600,200);
+  mPlot2->setInteraction(QCP::iRangeDrag, false);
+  mPlot2->setInteraction(QCP::iRangeZoom, false);
+  mPlot2->axisRect()->setRangeZoom(Qt::Horizontal);
+  mPlot2->axisRect()->setRangeDrag(Qt::Horizontal);   // Enable only drag along the horizontal axis
 
   mStartButton = new QPushButton(tr("Start"));
   connect(mStartButton, &QPushButton::clicked, this, &MainWindow::startPlot);
@@ -55,6 +61,12 @@ MainWindow::MainWindow(QWidget *parent) :
   QLabel *labelSpeed = new QLabel("speed");
   QLabel *labelVariant = new QLabel("type");
   QLabel *labelRange = new QLabel("tsrange");
+  QLabel *labelStopCrit = new QLabel("Stop Criteria:");
+  QLabel *labelEpsilon = new QLabel("Eps");
+  QLabel *labelCurIter =  new QLabel("cur iter.");
+
+  QSplitter *splitter1 = new QSplitter(Qt::Vertical);
+  splitter1->setMinimumHeight(400);
 
   mLineEditR1 = new QLineEdit("2");
   mLineEditR2 = new QLineEdit("1");
@@ -62,6 +74,9 @@ MainWindow::MainWindow(QWidget *parent) :
   mLineEditIter = new QLineEdit("500");
   mLineEditSpeed = new QLineEdit("40");
   mLineEditPlot2XAxisRange = new QLineEdit("100");
+  mLineEditEpsilon = new QLineEdit("0.001");
+
+  mLaberCrIter =  new QLabel("0");
 
   connect(mLineEditR1, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditR2, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
@@ -69,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(mLineEditIter, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditSpeed, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditPlot2XAxisRange, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
+  connect(mLineEditEpsilon, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
 
   mComboVariant = new QComboBox;
 
@@ -86,22 +102,41 @@ MainWindow::MainWindow(QWidget *parent) :
   buttonLayout->addWidget(mStopButton);
 
   QGridLayout *greedLayout = new QGridLayout;
-  greedLayout->addWidget(labelR1,0,0,Qt::AlignRight);
-  greedLayout->addWidget(labelR2,1,0,Qt::AlignRight);
-  greedLayout->addWidget(labelR3,2,0,Qt::AlignRight);
-  greedLayout->addWidget(labelIteration,3,0,Qt::AlignRight);
-  greedLayout->addWidget(labelSpeed,4,0,Qt::AlignRight);
-  greedLayout->addWidget(labelVariant,5,0,Qt::AlignRight);
-  greedLayout->addWidget(labelRange,6,0,Qt::AlignRight);
+  {
+      int nRow = 0;
 
-  greedLayout->addWidget(mLineEditR1,0,1,Qt::AlignRight);
-  greedLayout->addWidget(mLineEditR2,1,1,Qt::AlignRight);
-  greedLayout->addWidget(mLineEditR3,2,1,Qt::AlignRight);
-  greedLayout->addWidget(mLineEditIter,3,1,Qt::AlignRight);
-  greedLayout->addWidget(mLineEditSpeed,4,1,Qt::AlignRight);
-  greedLayout->addWidget(mComboVariant,5,1,Qt::AlignRight);
-  greedLayout->addWidget(mLineEditPlot2XAxisRange,6,1,Qt::AlignRight);
+      greedLayout->addWidget(labelR1,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditR1,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelR2,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditR2,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelR3,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditR3,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelSpeed,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditSpeed,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelVariant,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mComboVariant,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelStopCrit,nRow,0,1,2,Qt::AlignHCenter);
+      nRow++;
+      greedLayout->addWidget(labelIteration,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditIter,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelEpsilon,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditEpsilon,7,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelCurIter,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLaberCrIter,nRow,1,Qt::AlignLeft);
+      nRow++;
+      greedLayout->addWidget(splitter1,nRow,0,1,2,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelRange,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditPlot2XAxisRange,nRow,1,Qt::AlignRight);
 
+  }
   QVBoxLayout *controlLayout = new QVBoxLayout;
   controlLayout->addLayout(greedLayout);
   controlLayout->addStretch();
@@ -166,6 +201,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
   connect(&mDataTimer, SIGNAL(timeout()), this, SLOT(timerSlot()));
 
+
+  //m_customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+  //m_customPlot->axisRect()->setRangeZoom(Qt::Horizontal);
 }
 
 MainWindow::~MainWindow()
@@ -184,6 +222,10 @@ void MainWindow::startPlot()
     mStopButton->setDisabled(false);
     mStartButton->setDisabled(true);
     mLine->setVisible(true);
+    mPlot2->setInteraction(QCP::iRangeDrag, false);
+    mPlot2->setInteraction(QCP::iRangeZoom, false);
+    mPlot->setInteraction(QCP::iRangeDrag, false);
+    mPlot->setInteraction(QCP::iRangeZoom, false);
 }
 
 //====================================
@@ -194,6 +236,10 @@ void MainWindow::stopPlot()
     mDataTimer.stop();
     mStartButton->setDisabled(false);
     mStopButton->setDisabled(true);
+    mPlot2->setInteraction(QCP::iRangeDrag, true);
+    mPlot2->setInteraction(QCP::iRangeZoom, true);
+    mPlot->setInteraction(QCP::iRangeDrag, true);
+    mPlot->setInteraction(QCP::iRangeZoom, true);
 
 }
 
@@ -220,6 +266,7 @@ void MainWindow::getValues()
         double r1 = mLineEditR1->text().toDouble();
         double r2 = mLineEditR2->text().toDouble();
         double r3 = mLineEditR3->text().toDouble();
+        double eps_tmp = mLineEditEpsilon->text().toDouble();
         int itr = mLineEditIter->text().toInt();
         int rangets = mLineEditPlot2XAxisRange->text().toInt();
 
@@ -244,6 +291,11 @@ void MainWindow::getValues()
 
         if(rangets>10 && rangets< 5000)
             tsRange = rangets;
+
+        if(eps_tmp > 0 && eps_tmp <= 2.0)
+            epsilon = eps_tmp;
+        else
+            mLineEditEpsilon->setText(QString::number(epsilon));
 
         flag_mutex = false;
     }
@@ -310,14 +362,15 @@ void MainWindow::timerSlot()
     {
         startPointX = X;
         startPointY = Y;
-        qDebug() << "StartPoint" << X << "   " << Y;
+        //qDebug() << "StartPoint" << X << "   " << Y;
     }
     else
     {
         //qDebug() << "StartPoint else" << X << "   " << Y;
-        if(qAbs(startPointX-X)<=0.0009 && qAbs(startPointY)-Y<=0.0009)
+        //if(qFuzzyCompare(startPointX,X) && qFuzzyCompare(startPointY,Y))
+        if(qAbs(startPointX-X)<=epsilon && qAbs(startPointY)-Y<=epsilon)
         {
-            qDebug() << "StartPoint closed num iter = " << i;
+            //qDebug() << "StartPoint closed num iter = " << i;
             stopPlot();
         }
 
@@ -364,7 +417,88 @@ void MainWindow::timerSlot()
 
     mPlot->replot();
     mPlot2->replot();
+
+    mLaberCrIter->setText(QString::number(i));
+
     if(i> numIteration){
         stopPlot();
     }
 }
+
+
+//ui->setupUi(this);
+//customPlot = new QCustomPlot();
+//ui->gridLayout->addWidget(customPlot,0,0,1,1);
+
+//customPlot->setInteraction(QCP::iRangeZoom,true);
+//customPlot->setInteraction(QCP::iRangeDrag, true);
+//customPlot->axisRect()->setRangeDrag(Qt::Horizontal);   // Enable only drag along the horizontal axis
+//customPlot->axisRect()->setRangeZoom(Qt::Horizontal);   // Enable zoom only on the horizontal axis
+//customPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);   // Labl coordinates along the X axis as the Date and Time
+//customPlot->xAxis->setDateTimeFormat("hh:mm");  // Set the date and time format
+
+// // Customizable fonts on the axes
+//customPlot->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+//customPlot->yAxis->setTickLabelFont(QFont(QFont().family(), 8));
+
+// // Automatic scaling ticks on the X-axis
+//customPlot->xAxis->setAutoTickStep(true);
+
+// /* We are making visible the X-axis and Y on the top and right edges of the graph,
+// * but disable them tick and labels coordinates
+// * */
+//customPlot->xAxis2->setVisible(true);
+//customPlot->yAxis2->setVisible(true);
+//customPlot->xAxis2->setTicks(false);
+//customPlot->yAxis2->setTicks(false);
+//customPlot->xAxis2->setTickLabels(false);
+//customPlot->yAxis2->setTickLabels(false);
+
+//customPlot->yAxis->setTickLabelColor(QColor(Qt::red));
+//customPlot->legend->setVisible(true);   // Enable Legend
+// // Set the legend in the upper left corner of the chart
+//customPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignLeft|Qt::AlignTop);
+
+// // Initialize the chart and bind it to the axes
+//graphic = new QCPGraph(customPlot->xAxis, customPlot->yAxis);
+//customPlot->addPlottable(graphic);
+//graphic->setName("Доход, Р");
+//graphic->setPen(QPen(QColor(Qt::red)));
+//graphic->setAntialiased(false);
+//graphic->setLineStyle(QCPGraph::lsImpulse); // Charts in a pulse ticks view
+
+//connect(customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)),
+//        this, SLOT(slotRangeChanged(QCPRange)));
+
+// // We will build schedule with today's day and the current second in a future
+//double now = QDateTime::currentDateTime().toTime_t();
+// // We declare a vector of time and income
+//QVector <double> time(400), income(400);
+
+//srand(15); // Initialize the random number generator
+
+// // ЗFill in the values of the graph
+//for (int i=0; i<400; ++i)
+//  {
+//    time[i] = now + 3600*i;
+//    income[i] = qFabs(income[i-1]) + (i/50.0+1)*(rand()/(double)RAND_MAX-0.5);
+//  }
+
+//graphic->setData(time, income);
+//customPlot->rescaleAxes();
+//customPlot->replot();
+//}
+
+//MainWindow::~MainWindow()
+//{
+//delete ui;
+//}
+
+//void MainWindow::slotRangeChanged(const QCPRange &newRange)
+//{
+// /* If a scope chart is less than one day,
+// * then display the hours and minutes in the Axis X,
+// * otherwise display the date "Month Day Year"
+// * */
+//customPlot->xAxis->setDateTimeFormat((newRange.size() <= 86400)? "hh:mm" : "dd MMM yy");
+//}
