@@ -56,12 +56,16 @@ private:
   QLineEdit *mLineEditR2;
   QLineEdit *mLineEditR3;
   QLineEdit *mLineEditIter;
-  QLineEdit *mLineEditSpeed;
+  QLineEdit *mLineEditPolarAngel;
+  QLineEdit *mLineEditTimerStep;
   QLineEdit *mLineEditPlot2XAxisRange;
   QLineEdit *mLineEditEpsilon;
 
-  QLabel *mLaberCrIter;
+  QLabel *mLabelCrIter;
+  QLabel *mlabelRatio;
+  QLabel *mlabelCurEps;
 
+  QCheckBox *mCheckboxRevert;
 
   QPushButton *mStartButton;
   QPushButton *mStopButton;
@@ -83,6 +87,7 @@ private:
   int tsRange;
   double epsilon;
 
+  double segmentLength(double X1, double Y1, double X2 = 0, double Y2 = 0);
 };
 
 

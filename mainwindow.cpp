@@ -58,40 +58,49 @@ MainWindow::MainWindow(QWidget *parent) :
   QLabel *labelR2 = new QLabel("r");
   QLabel *labelR3 = new QLabel("h");
   QLabel *labelIteration = new QLabel("iter.");
-  QLabel *labelSpeed = new QLabel("speed");
+  QLabel *labelSpeed = new QLabel("timer int.");
   QLabel *labelVariant = new QLabel("type");
   QLabel *labelRange = new QLabel("tsrange");
   QLabel *labelStopCrit = new QLabel("Stop Criteria:");
   QLabel *labelEpsilon = new QLabel("Eps");
   QLabel *labelCurIter =  new QLabel("cur iter.");
+  QLabel *labelRatio =  new QLabel("ratio");
+  QLabel *labelCurDist = new QLabel("dist");
+  QLabel *labelPolarAngel = new QLabel("Polar ang.");
 
   QSplitter *splitter1 = new QSplitter(Qt::Vertical);
-  splitter1->setMinimumHeight(400);
+  splitter1->setMinimumHeight(350);
 
   mLineEditR1 = new QLineEdit("2");
   mLineEditR2 = new QLineEdit("1");
   mLineEditR3 = new QLineEdit("1");
   mLineEditIter = new QLineEdit("500");
-  mLineEditSpeed = new QLineEdit("40");
+  mLineEditTimerStep = new QLineEdit("40");
   mLineEditPlot2XAxisRange = new QLineEdit("100");
   mLineEditEpsilon = new QLineEdit("0.001");
+  mLineEditPolarAngel = new QLineEdit("0.1");
 
-  mLaberCrIter =  new QLabel("0");
+  mLabelCrIter =  new QLabel("0");
+  mlabelRatio  =  new QLabel("0.5");
+  mlabelCurEps = new QLabel("0.0");
+
+  mCheckboxRevert = new QCheckBox("Revert");
+  mCheckboxRevert->setCheckState(Qt::CheckState::Unchecked);
+
+  mComboVariant = new QComboBox;
+  QStringList cyclStrList;
+  cyclStrList << "hypocycloid" << "epicycloid";
+  mComboVariant->addItems(cyclStrList);
 
   connect(mLineEditR1, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditR2, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditR3, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditIter, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
-  connect(mLineEditSpeed, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
+  connect(mLineEditTimerStep, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditPlot2XAxisRange, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
   connect(mLineEditEpsilon, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
-
-  mComboVariant = new QComboBox;
-
-  QStringList cyclStrList;
-
-  cyclStrList << "hypocycloid" << "epicycloid";
-  mComboVariant->addItems(cyclStrList);
+  connect(mCheckboxRevert, &QCheckBox::stateChanged, this, &MainWindow::setMutexFlag);
+  connect(mLineEditPolarAngel, &QLineEdit::editingFinished, this, &MainWindow::setMutexFlag);
 
   connect(mComboVariant, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [=](int index) {
       variantChanged(index);
@@ -114,8 +123,16 @@ MainWindow::MainWindow(QWidget *parent) :
       greedLayout->addWidget(labelR3,nRow,0,Qt::AlignRight);
       greedLayout->addWidget(mLineEditR3,nRow,1,Qt::AlignRight);
       nRow++;
+      greedLayout->addWidget(mCheckboxRevert,nRow,0,1,2,Qt::AlignRight);
+      nRow++;
       greedLayout->addWidget(labelSpeed,nRow,0,Qt::AlignRight);
-      greedLayout->addWidget(mLineEditSpeed,nRow,1,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditTimerStep,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelPolarAngel,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditPolarAngel,nRow,1,Qt::AlignRight);
+      nRow++;
+      greedLayout->addWidget(labelRatio,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mlabelRatio,nRow,1,Qt::AlignLeft);
       nRow++;
       greedLayout->addWidget(labelVariant,nRow,0,Qt::AlignRight);
       greedLayout->addWidget(mComboVariant,nRow,1,Qt::AlignRight);
@@ -126,10 +143,13 @@ MainWindow::MainWindow(QWidget *parent) :
       greedLayout->addWidget(mLineEditIter,nRow,1,Qt::AlignRight);
       nRow++;
       greedLayout->addWidget(labelEpsilon,nRow,0,Qt::AlignRight);
-      greedLayout->addWidget(mLineEditEpsilon,7,1,Qt::AlignRight);
+      greedLayout->addWidget(mLineEditEpsilon,nRow,1,Qt::AlignRight);
       nRow++;
       greedLayout->addWidget(labelCurIter,nRow,0,Qt::AlignRight);
-      greedLayout->addWidget(mLaberCrIter,nRow,1,Qt::AlignLeft);
+      greedLayout->addWidget(mLabelCrIter,nRow,1,Qt::AlignLeft);
+      nRow++;
+      greedLayout->addWidget(labelCurDist,nRow,0,Qt::AlignRight);
+      greedLayout->addWidget(mlabelCurEps,nRow,1,Qt::AlignLeft);
       nRow++;
       greedLayout->addWidget(splitter1,nRow,0,1,2,Qt::AlignRight);
       nRow++;
@@ -178,6 +198,11 @@ MainWindow::MainWindow(QWidget *parent) :
   fermatSpiral->setPen(QPen(Qt::blue));
   fermatSpiral->setBrush(QBrush(QColor(0, 0, 255, 20)));
 
+  // style of curve
+  fermatSpiral->setLineStyle(QCPCurve::LineStyle::lsLine);
+  // for plot point size of 3 on plot
+  //fermatSpiral->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
+
   // configure plot to have two right axes:
   mPlot2->yAxis->setTickLabels(false);
   //connect(mPlot->yAxis2, SIGNAL(rangeChanged(QCPRange)), mPlot->yAxis, SLOT(setRange(QCPRange))); // left axis only mirrors inner right axis
@@ -201,9 +226,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
   connect(&mDataTimer, SIGNAL(timeout()), this, SLOT(timerSlot()));
 
-
-  //m_customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-  //m_customPlot->axisRect()->setRangeZoom(Qt::Horizontal);
 }
 
 MainWindow::~MainWindow()
@@ -216,7 +238,7 @@ MainWindow::~MainWindow()
 //====================================
 void MainWindow::startPlot()
 {
-    speedTm = mLineEditSpeed->text().toInt();
+    speedTm = mLineEditTimerStep->text().toInt();
     mDataTimer.start(speedTm);
     mClearButton->setDisabled(false);
     mStopButton->setDisabled(false);
@@ -269,13 +291,29 @@ void MainWindow::getValues()
         double eps_tmp = mLineEditEpsilon->text().toDouble();
         int itr = mLineEditIter->text().toInt();
         int rangets = mLineEditPlot2XAxisRange->text().toInt();
+        double revt = 1.0;
+        double polar = mLineEditPolarAngel->text().toDouble();
+
+        if(mCheckboxRevert->isChecked())
+        {
+            revt = -1.0;
+        }
+
+        if(polar > 0.0 && polar <=20.0 )
+        {
+            phi = polar;
+        }
+        else
+        {
+            mLineEditPolarAngel->setText(QString::number(phi));
+        }
 
         if(r1>0.0)
             Rfixed = r1;
         if(r2>0.0)
             Rmoving = r2;
         if(r3>=0.0)
-            Rpoint = r3;
+            Rpoint = revt * r3;
         if(itr>0)
             numIteration = itr;
         if(r2 < r1)
@@ -291,6 +329,8 @@ void MainWindow::getValues()
 
         if(rangets>10 && rangets< 5000)
             tsRange = rangets;
+
+        mlabelRatio->setText(QString::number(Rmoving/Rfixed));
 
         if(eps_tmp > 0 && eps_tmp <= 2.0)
             epsilon = eps_tmp;
@@ -316,7 +356,7 @@ void MainWindow::variantChanged(int index)
 void MainWindow::setMutexFlag()
 {
     flag_mutex = true;
-    mDataTimer.setInterval(mLineEditSpeed->text().toInt());
+    mDataTimer.setInterval(mLineEditTimerStep->text().toInt());
 }
 
 
@@ -362,13 +402,16 @@ void MainWindow::timerSlot()
     {
         startPointX = X;
         startPointY = Y;
-        //qDebug() << "StartPoint" << X << "   " << Y;
+        qDebug() << "StartPoint" << X << "   " << Y;
     }
     else
     {
         //qDebug() << "StartPoint else" << X << "   " << Y;
         //if(qFuzzyCompare(startPointX,X) && qFuzzyCompare(startPointY,Y))
-        if(qAbs(startPointX-X)<=epsilon && qAbs(startPointY)-Y<=epsilon)
+        double segLen = segmentLength(startPointX, startPointY, X, Y);
+        mlabelCurEps->setText(QString::number(segLen));
+
+        if(segLen <=epsilon)
         {
             //qDebug() << "StartPoint closed num iter = " << i;
             stopPlot();
@@ -387,6 +430,8 @@ void MainWindow::timerSlot()
     mLine->end->setCoords(QPointF(RmovingCenterX,RmovingCenterY));
 
     fermatSpiral->addData(i,X,Y);
+
+
     //fermatSpiral->addData(i,qSqrt(phi)*qCos(phi), qSqrt(phi)*qSin(phi));
 
     // make key axis range scroll with the data:
@@ -394,6 +439,7 @@ void MainWindow::timerSlot()
     fermatSpiral->rescaleValueAxis(true, true);
     mGraph1->rescaleValueAxis(false, true);
     //mGraph2->rescaleValueAxis(false, true);
+
     mPlot->xAxis->setRange(0, 4*axisRange, Qt::AlignCenter);
     mPlot->yAxis->setRange(0, 4*axisRange, Qt::AlignBottom);
 
@@ -418,13 +464,23 @@ void MainWindow::timerSlot()
     mPlot->replot();
     mPlot2->replot();
 
-    mLaberCrIter->setText(QString::number(i));
+    mLabelCrIter->setText(QString::number(i));
 
     if(i> numIteration){
         stopPlot();
     }
 }
 
+double MainWindow::segmentLength(double X1, double Y1, double X2, double Y2)
+{
+    double x1x2_2 = X2 - X1;
+    x1x2_2 = x1x2_2*x1x2_2;
+
+    double y1y2_2 = Y2 - Y1;
+    y1y2_2 = y1y2_2 * y1y2_2;
+
+    return qSqrt( y1y2_2 + x1x2_2 );
+}
 
 //ui->setupUi(this);
 //customPlot = new QCustomPlot();
